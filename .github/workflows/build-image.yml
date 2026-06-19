@@ -12,13 +12,13 @@ on:
           - "false"
           - "true"
       openwrt_version:
-        description: 选择 ImmortalWrt 正式稳定版
+        description: 选择 ImmortalWrt 正式稳定版或快照
         required: true
         default: "25.12.0"
         type: choice
         options:
           - "25.12.0"
-          - "24.10.0"
+          - "24.10.6"
           - "25.12-SNAPSHOT"
       kernel_choice:
         description: 选择打包内核（如果是下拉菜单里没有的内核，请选 manual 并在下方手动输入）
