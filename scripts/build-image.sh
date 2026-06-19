@@ -12,10 +12,14 @@ PROFILE="default"
 DAEDE_ARCH="aarch64_cortex-a53"
 DAEDE_REPO="kenzok8/openwrt-daede"
 
-# 自动拼接 ImageBuilder 下载路径
-IMAGEBUILDER_URL="https://downloads.immortalwrt.org/releases/${OPENWRT_VERSION}/targets/armvirt/64/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armvirt-64.Linux-x86_64.tar.zst"
+# 【关键修复】自动区分快照版路径与正式版路径
+if [[ "$OPENWRT_VERSION" == *"SNAPSHOT"* ]]; then
+  IMAGEBUILDER_URL="https://downloads.immortalwrt.org/releases/${OPENWRT_VERSION}/targets/armvirt/64/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armvirt-64.Linux-x86_64.tar.zst"
+else
+  IMAGEBUILDER_URL="https://downloads.immortalwrt.org/${OPENWRT_VERSION}/targets/armvirt/64/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armvirt-64.Linux-x86_64.tar.zst"
+fi
 
-# 在预装包里直接加入了 luci-app-amlogic (晶晨宝盒) 及其所需依赖
+# 预装包里包含了晶晨宝盒 luci-app-amlogic 及其依赖
 EXTRA_PACKAGES="luci luci-i18n-base-zh-cn luci-i18n-package-manager-zh-cn luci-app-daede luci-app-amlogic kmod-sched-core kmod-sched-bpf kmod-veth kmod-xdp-sockets-diag curl nano"
 
 WORK_DIR="${WORK_DIR:-$PWD/work}"
@@ -61,7 +65,10 @@ install_daede_apk() {
 
 echo ">>>> 正在获取 ImageBuilder: $IMAGEBUILDER_URL"
 if [ ! -s "$IB_ARCHIVE" ]; then
-  curl -L --retry 8 --retry-delay 5 --connect-timeout 30 -o "$IB_ARCHIVE" "$IMAGEBUILDER_URL"
+  curl -L -f --retry 8 --retry-delay 5 --connect-timeout 30 -o "$IB_ARCHIVE" "$IMAGEBUILDER_URL" || {
+    echo "❌ 错误：下载失败，请确认该版本 ImageBuilder 存在！"
+    exit 1
+  }
 fi
 
 rm -rf "$WORK_DIR/imagebuilder"
@@ -72,7 +79,6 @@ install_daede_apk
 
 cd "$WORK_DIR/imagebuilder"
 
-# 修改配置以无条件生成打包工具所需的 .tar.gz 根文件系统
 sed -i -e 's/# CONFIG_TARGET_ROOTFS_TARGZ is not set/CONFIG_TARGET_ROOTFS_TARGZ=y/' .config
 
 echo ">>>> 开始编译基础 Rootfs 系统结构..."
@@ -111,7 +117,7 @@ cat > BUILD-MANIFEST.txt <<BODYEOF
 - **\`.img / .img.gz\`**：请直接使用 Rufus / BalenaEtcher 烧录进 U 盘引导。
 
 ### ⚙️ 编译信息
-- **系统版本**：ImmortalWrt \`${OPENWRT_VERSION}\`
+- **系统版本**：ImmortalWrt \`${OPENWRT_VERSION}\` (正式稳定版)
 - **晶晨核心内核**：晶晨 \`${AMLOGIC_KERNEL}\` (完全整合 eBPF 支持)
 - **设备专属 DTB**：\`meson-gxm-tx8-max.dtb\`
 - **构建日期**：${BUILD_DATE}
