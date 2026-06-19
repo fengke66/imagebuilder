@@ -12,7 +12,7 @@ PROFILE="default"
 DAEDE_ARCH="aarch64_cortex-a53"
 DAEDE_REPO="kenzok8/openwrt-daede"
 
-# 【关键修复】自动区分快照版路径与正式版路径
+# ====== 规范换行修复：防止下载链接断开导致 exit code 2 ======
 if [[ "$OPENWRT_VERSION" == *"SNAPSHOT"* ]]; then
   IMAGEBUILDER_URL="https://downloads.immortalwrt.org/releases/${OPENWRT_VERSION}/targets/armvirt/64/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armvirt-64.Linux-x86_64.tar.zst"
 else
@@ -117,7 +117,7 @@ cat > BUILD-MANIFEST.txt <<BODYEOF
 - **\`.img / .img.gz\`**：请直接使用 Rufus / BalenaEtcher 烧录进 U 盘引导。
 
 ### ⚙️ 编译信息
-- **系统版本**：ImmortalWrt \`${OPENWRT_VERSION}\` (正式稳定版)
+- **系统版本**：ImmortalWrt \`${OPENWRT_VERSION}\`
 - **晶晨核心内核**：晶晨 \`${AMLOGIC_KERNEL}\` (完全整合 eBPF 支持)
 - **设备专属 DTB**：\`meson-gxm-tx8-max.dtb\`
 - **构建日期**：${BUILD_DATE}
