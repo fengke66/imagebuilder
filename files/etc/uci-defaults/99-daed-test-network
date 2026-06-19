@@ -12,7 +12,7 @@ uci commit network
 uci set dropbear.main.enable='1'
 uci set dropbear.main.PasswordAuth='on'
 uci set dropbear.main.RootPasswordAuth='on'
-uci set dropbear.main.Port='9167'
+uci set dropbear.main.Port='22'
 uci set dropbear.main.Interface='lan'
 uci commit dropbear
 
