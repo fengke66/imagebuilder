@@ -1,4 +1,4 @@
-name: Build daede image
+name: Build TX8 Max daede Image
 
 on:
   workflow_dispatch:
@@ -11,41 +11,41 @@ on:
         options:
           - "false"
           - "true"
-      imagebuilder_url:
-        description: ImmortalWrt ImageBuilder 下载地址
+      openwrt_version:
+        description: 选择 ImmortalWrt 正式稳定版
         required: true
-        default: "https://downloads.immortalwrt.org/releases/25.12-SNAPSHOT/targets/x86/64/immortalwrt-imagebuilder-25.12-SNAPSHOT-x86-64.Linux-x86_64.tar.zst"
-      preflight:
-        description: 构建前先检查软件包清单是否齐全
-        required: true
-        default: "true"
+        default: "25.12.0"
         type: choice
         options:
-          - "true"
-          - "false"
+          - "25.12.0"
+          - "24.10.0"
+          - "25.12-SNAPSHOT"
+      kernel_choice:
+        description: 选择打包内核（如果是下拉菜单里没有的内核，请选 manual 并在下方手动输入）
+        required: true
+        default: "6.1.60"
+        type: choice
+        options:
+          - "6.1.60"
+          - "6.6.15"
+          - "6.12.1"
+          - "manual"
+      manual_kernel:
+        description: 手动填入内核版本（仅在上方选择 manual 时生效，例如 6.1.80）
+        required: false
+        default: ""
       rootfs_partsize:
         description: 根文件系统分区大小（MB）
         required: true
         default: "1024"
-      install_daede:
-        description: 把 luci-app-daede 打进固件
-        required: true
-        default: "true"
-        type: choice
-        options:
-          - "true"
-          - "false"
       daede_release_tag:
-        description: luci-app-daede 的 release 版本，默认 latest 取最新
+        description: luci-app-daede 的 release 版本 (默认 latest 取最新)
         required: true
         default: "latest"
-      daede_apk_url:
-        description: 可选，直接指定 luci-app-daede 的 APK 下载地址
-        required: false
-        default: ""
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   build:
@@ -60,34 +60,29 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential \
-            clang \
-            flex \
-            bison \
-            gawk \
-            gettext \
-            git \
-            libncurses-dev \
-            libssl-dev \
-            python3 \
-            python3-distutils \
-            rsync \
-            unzip \
-            zstd \
-            file \
-            wget \
-            curl \
-            qemu-utils \
-            genisoimage
+            build-essential clang flex bison gawk gettext git \
+            libncurses-dev libssl-dev python3 python3-distutils \
+            rsync unzip zstd file wget curl qemu-utils genisoimage jq
+
+      - name: Determine Kernel
+        id: kernel_set
+        run: |
+          if [ "${{ inputs.kernel_choice }}" = "manual" ]; then
+            if [ -z "${{ inputs.manual_kernel }}" ]; then
+              echo "错误：你选择了手动输入内核，但没有填写具体版本！"
+              exit 1
+            fi
+            echo "FINAL_KERNEL=${{ inputs.manual_kernel }}" >> $GITHUB_ENV
+          else
+            echo "FINAL_KERNEL=${{ inputs.kernel_choice }}" >> $GITHUB_ENV
+          fi
 
       - name: Build image
         env:
-          IMAGEBUILDER_URL: ${{ inputs.imagebuilder_url }}
-          PREFLIGHT: ${{ inputs.preflight }}
+          OPENWRT_VERSION: ${{ inputs.openwrt_version }}
+          AMLOGIC_KERNEL: ${{ env.FINAL_KERNEL }}
           ROOTFS_PARTSIZE: ${{ inputs.rootfs_partsize }}
-          INSTALL_DAEDE: ${{ inputs.install_daede }}
           DAEDE_RELEASE_TAG: ${{ inputs.daede_release_tag }}
-          DAEDE_APK_URL: ${{ inputs.daede_apk_url }}
           GITHUB_TOKEN: ${{ github.token }}
           OUT_DIR: ${{ github.workspace }}/out
         run: |
@@ -97,7 +92,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: immortalwrt-daede-x86-64
+          name: immortalwrt-daede-tx8max
           path: out/*
           if-no-files-found: error
 
@@ -105,8 +100,8 @@ jobs:
         if: inputs.publish_release == 'true'
         uses: ncipollo/release-action@v1
         with:
-          tag: daede-${{ github.run_number }}
-          name: daede 固件 ${{ github.run_number }}
+          tag: tx8max-v${{ inputs.openwrt_version }}-${{ github.run_number }}
+          name: TX8-Max 固件 v${{ inputs.openwrt_version }} [内核-${{ env.FINAL_KERNEL }}]
           artifacts: out/*
           allowUpdates: true
           replacesArtifacts: true
