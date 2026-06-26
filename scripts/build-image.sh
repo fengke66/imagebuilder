@@ -7,20 +7,21 @@ ROOTFS_PARTSIZE="${ROOTFS_PARTSIZE:-1024}"
 DAEDE_RELEASE_TAG="${DAEDE_RELEASE_TAG:-latest}"
 OUT_DIR="${OUT_DIR:-$PWD/out}"
 
-TARGET="armvirt/64"
+# ====== 🛠️ 已切换为适合你的 armsr/armv8 通用 ARM64 架构 ======
+TARGET="armsr/armv8"
 PROFILE="default"
 DAEDE_ARCH="aarch64_cortex-a53"
 DAEDE_REPO="kenzok8/openwrt-daede"
 
-# ====== 规范换行修复：防止下载链接断开导致 exit code 2 ======
+# ====== 🛠️ 自动拼接官方 armsr/armv8 的 ImageBuilder 下载路径 ======
 if [[ "$OPENWRT_VERSION" == *"SNAPSHOT"* ]]; then
-  IMAGEBUILDER_URL="https://downloads.immortalwrt.org/releases/${OPENWRT_VERSION}/targets/armvirt/64/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armvirt-64.Linux-x86_64.tar.zst"
+  IMAGEBUILDER_URL="https://downloads.immortalwrt.org/snapshots/targets/armsr/armv8/immortalwrt-imagebuilder-armsr-armv8.Linux-x86_64.tar.zst"
 else
-  IMAGEBUILDER_URL="https://downloads.immortalwrt.org/${OPENWRT_VERSION}/targets/armvirt/64/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armvirt-64.Linux-x86_64.tar.zst"
+  IMAGEBUILDER_URL="https://downloads.immortalwrt.org/releases/${OPENWRT_VERSION}/targets/armsr/armv8/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armsr-armv8.Linux-x86_64.tar.zst"
 fi
 
-# 预装包里包含了晶晨宝盒 luci-app-amlogic 及其依赖
-EXTRA_PACKAGES="luci luci-i18n-base-zh-cn luci-i18n-package-manager-zh-cn luci-app-daede luci-app-amlogic kmod-sched-core kmod-sched-bpf kmod-veth kmod-xdp-sockets-diag curl nano"
+# 预装包（已剔除 25.12.0 APK 软件源中不存在的过时组件）
+EXTRA_PACKAGES="luci luci-i18n-base-zh-cn luci-app-daede luci-app-amlogic kmod-sched-core kmod-sched-bpf kmod-veth kmod-xdp-sockets-diag curl nano"
 
 WORK_DIR="${WORK_DIR:-$PWD/work}"
 IB_ARCHIVE="$WORK_DIR/imagebuilder.tar.zst"
@@ -79,7 +80,9 @@ install_daede_apk
 
 cd "$WORK_DIR/imagebuilder"
 
-sed -i -e 's/# CONFIG_TARGET_ROOTFS_TARGZ is not set/CONFIG_TARGET_ROOTFS_TARGZ=y/' .config
+# 新版大雕环境鲁棒性改动
+sed -i -e 's/# CONFIG_TARGET_ROOTFS_TARGZ is not set/CONFIG_TARGET_ROOTFS_TARGZ=y/' .config 2>/dev/null || true
+echo "CONFIG_TARGET_ROOTFS_TARGZ=y" >> .config
 
 echo ">>>> 开始编译基础 Rootfs 系统结构..."
 if ! make image PROFILE="$PROFILE" PACKAGES="$EXTRA_PACKAGES" FILES=files BIN_DIR="$OUT_DIR" ROOTFS_PARTSIZE="$ROOTFS_PARTSIZE"; then
@@ -94,9 +97,11 @@ rm -rf "$AMLOGIC_DIR"
 git clone --depth 1 https://github.com/ophub/amlogic-s9xxx-openwrt.git "$AMLOGIC_DIR"
 
 mkdir -p "$AMLOGIC_DIR/openwrt"
-cp "$ROOTFS_FILE" "$AMLOGIC_DIR/openwrt/openwrt-armvirt-64-generic-rootfs.tar.gz"
+# 完美对齐大雕工具箱默认接受的 generic 文件名命名规范
+cp "$ROOTFS_FILE" "$AMLOGIC_DIR/openwrt/openwrt-armsr-armv8-generic-rootfs.tar.gz"
 
 cd "$AMLOGIC_DIR"
+# 执行针对你电视盒子的打包封装
 sudo ./make -b "Tanix-TX8-MAX" -k "$AMLOGIC_KERNEL"
 
 mkdir -p "$OUT_DIR"
