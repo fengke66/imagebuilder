@@ -20,7 +20,7 @@ else
   IMAGEBUILDER_URL="https://downloads.immortalwrt.org/releases/${OPENWRT_VERSION}/targets/armsr/armv8/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armsr-armv8.Linux-x86_64.tar.zst"
 fi
 
-# ====== 🛠️ 修复：剔除官方源里不存在的 luci-app-amlogic，交由后方工具箱自动封装 ======
+# 预装包
 EXTRA_PACKAGES="luci luci-i18n-base-zh-cn luci-app-daede kmod-sched-core kmod-sched-bpf kmod-veth kmod-xdp-sockets-diag curl nano"
 
 WORK_DIR="${WORK_DIR:-$PWD/work}"
@@ -97,12 +97,11 @@ rm -rf "$AMLOGIC_DIR"
 git clone --depth 1 https://github.com/ophub/amlogic-s9xxx-openwrt.git "$AMLOGIC_DIR"
 
 mkdir -p "$AMLOGIC_DIR/openwrt"
-# 完美对齐大雕工具箱默认接受的 generic 文件名命名规范
 cp "$ROOTFS_FILE" "$AMLOGIC_DIR/openwrt/openwrt-armsr-armv8-generic-rootfs.tar.gz"
 
 cd "$AMLOGIC_DIR"
-# 执行针对你电视盒子的打包封装（大雕工具箱在此步骤会自动处理晶晨宝盒的集成）
-sudo ./make -b "Tanix-TX8-MAX" -k "$AMLOGIC_KERNEL"
+# ====== 🛠️ 修复：将错误的 ./make 修改为大雕工具箱标准的封装入口脚本 ======
+sudo ./make-openwrt.sh -b "Tanix-TX8-MAX" -k "$AMLOGIC_KERNEL"
 
 mkdir -p "$OUT_DIR"
 cp -r output/* "$OUT_DIR/"
