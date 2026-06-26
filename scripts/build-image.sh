@@ -7,7 +7,7 @@ ROOTFS_PARTSIZE="${ROOTFS_PARTSIZE:-1024}"
 DAEDE_RELEASE_TAG="${DAEDE_RELEASE_TAG:-latest}"
 OUT_DIR="${OUT_DIR:-$PWD/out}"
 
-# ====== 🛠️ 修复：将 armsr/armv8 对应的 PROFILE 修改为正确的 generic ======
+# ====== armsr/armv8 通用 ARM64 架构配置 ======
 TARGET="armsr/armv8"
 PROFILE="generic"
 DAEDE_ARCH="aarch64_cortex-a53"
@@ -20,8 +20,8 @@ else
   IMAGEBUILDER_URL="https://downloads.immortalwrt.org/releases/${OPENWRT_VERSION}/targets/armsr/armv8/immortalwrt-imagebuilder-${OPENWRT_VERSION}-armsr-armv8.Linux-x86_64.tar.zst"
 fi
 
-# 预装包（已剔除 25.12.0 APK 软件源中不存在的过时组件）
-EXTRA_PACKAGES="luci luci-i18n-base-zh-cn luci-app-daede luci-app-amlogic kmod-sched-core kmod-sched-bpf kmod-veth kmod-xdp-sockets-diag curl nano"
+# ====== 🛠️ 修复：剔除官方源里不存在的 luci-app-amlogic，交由后方工具箱自动封装 ======
+EXTRA_PACKAGES="luci luci-i18n-base-zh-cn luci-app-daede kmod-sched-core kmod-sched-bpf kmod-veth kmod-xdp-sockets-diag curl nano"
 
 WORK_DIR="${WORK_DIR:-$PWD/work}"
 IB_ARCHIVE="$WORK_DIR/imagebuilder.tar.zst"
@@ -80,7 +80,7 @@ install_daede_apk
 
 cd "$WORK_DIR/imagebuilder"
 
-# 新版大雕环境鲁棒性改动
+# 环境鲁棒性改动
 sed -i -e 's/# CONFIG_TARGET_ROOTFS_TARGZ is not set/CONFIG_TARGET_ROOTFS_TARGZ=y/' .config 2>/dev/null || true
 echo "CONFIG_TARGET_ROOTFS_TARGZ=y" >> .config
 
@@ -101,7 +101,7 @@ mkdir -p "$AMLOGIC_DIR/openwrt"
 cp "$ROOTFS_FILE" "$AMLOGIC_DIR/openwrt/openwrt-armsr-armv8-generic-rootfs.tar.gz"
 
 cd "$AMLOGIC_DIR"
-# 执行针对你电视盒子的打包封装
+# 执行针对你电视盒子的打包封装（大雕工具箱在此步骤会自动处理晶晨宝盒的集成）
 sudo ./make -b "Tanix-TX8-MAX" -k "$AMLOGIC_KERNEL"
 
 mkdir -p "$OUT_DIR"
