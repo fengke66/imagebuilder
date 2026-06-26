@@ -7,13 +7,13 @@ ROOTFS_PARTSIZE="${ROOTFS_PARTSIZE:-1024}"
 DAEDE_RELEASE_TAG="${DAEDE_RELEASE_TAG:-latest}"
 OUT_DIR="${OUT_DIR:-$PWD/out}"
 
-# ====== 🛠️ 已切换为适合你的 armsr/armv8 通用 ARM64 架构 ======
+# ====== 🛠️ 修复：将 armsr/armv8 对应的 PROFILE 修改为正确的 generic ======
 TARGET="armsr/armv8"
-PROFILE="default"
+PROFILE="generic"
 DAEDE_ARCH="aarch64_cortex-a53"
 DAEDE_REPO="kenzok8/openwrt-daede"
 
-# ====== 🛠️ 自动拼接官方 armsr/armv8 的 ImageBuilder 下载路径 ======
+# ====== 自动拼接官方 armsr/armv8 的 ImageBuilder 下载路径 ======
 if [[ "$OPENWRT_VERSION" == *"SNAPSHOT"* ]]; then
   IMAGEBUILDER_URL="https://downloads.immortalwrt.org/snapshots/targets/armsr/armv8/immortalwrt-imagebuilder-armsr-armv8.Linux-x86_64.tar.zst"
 else
